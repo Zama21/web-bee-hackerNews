@@ -10,6 +10,7 @@ const NewsList = () => {
     fetchNextPage,
     hasNextPage,
     refetch,
+    isFetching,
     isFetchingNextPage,
     status,
   } = useInfiniteQuery('news', fetchNewsData, {
@@ -17,10 +18,7 @@ const NewsList = () => {
       if (lastPage.length === 0) return undefined;
       return pages.length + 1;
     },
-    staleTime: 60000,
-    refetchInterval: 60000,
   });
-
   const observerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -28,43 +26,46 @@ const NewsList = () => {
       (entries) => {
         const entry = entries[0];
 
-        if (entry.isIntersecting && hasNextPage && !isFetchingNextPage) {
+        if (entry.isIntersecting) {
           fetchNextPage();
         }
       },
       { threshold: 1 }
     );
 
-    let currentRef = observerRef.current;
+    const currentRef = observerRef.current;
 
-    setTimeout(() => {
-      currentRef = observerRef.current;
-      if (currentRef) {
-        observer.observe(currentRef);
-      }
-    }, 100);
+    if (!currentRef) return;
+
+    observer.observe(currentRef);
 
     return () => {
-      if (currentRef) {
-        observer.unobserve(currentRef);
-      }
+      observer.unobserve(currentRef);
     };
-  }, [hasNextPage, isFetchingNextPage]);
+  }, [fetchNextPage, status, observerRef.current]);
 
-  if (status === 'loading') return <LoadingMessage>Loading...</LoadingMessage>;
   if (status === 'error')
     return <ErrorMessage>Error loading news</ErrorMessage>;
 
   return (
     <Container>
-      <Button onClick={() => refetch()}>Обновить новости</Button>
-      <ul>
-        {data?.pages.flat().map((item) => {
-          return <NewsItem key={item.id} item={item} />;
-        })}
-      </ul>
-      <div ref={observerRef}></div>
-      {isFetchingNextPage && <LoadingMessage>Loading more...</LoadingMessage>}
+      {(isFetching || status === 'loading') && (
+        <LoadingMessage>Loading...</LoadingMessage>
+      )}
+      {status === 'success' && (
+        <>
+          <Button onClick={() => refetch()}>Обновить новости</Button>
+          <ul>
+            {data?.pages.flat().map((item) => {
+              return <NewsItem key={item.id} item={item} />;
+            })}
+          </ul>
+          {hasNextPage && !isFetchingNextPage && <div ref={observerRef}></div>}
+          {isFetchingNextPage && (
+            <LoadingMessage>Loading more...</LoadingMessage>
+          )}
+        </>
+      )}
     </Container>
   );
 };

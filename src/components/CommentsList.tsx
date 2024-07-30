@@ -1,4 +1,3 @@
-import React from 'react';
 import CommentItem from './CommentItem';
 import styled from 'styled-components';
 import { IComment } from '../types/newsTypes';

@@ -9,11 +9,9 @@ const NewsPage = () => {
   const {
     data: newsItem,
     isLoading,
+    isFetching,
     refetch: refetchNews,
-  } = useQuery(['newsItem', id], () => fetchNewsItem(id), {
-    staleTime: 60000,
-    refetchInterval: 60000,
-  });
+  } = useQuery(['newsItem', id], () => fetchNewsItem(+id));
 
   const history = useHistory();
 
@@ -23,7 +21,9 @@ const NewsPage = () => {
 
   return (
     <Container>
-      {isLoading && <LoadingMessage>Загрузка...</LoadingMessage>}
+      {(isLoading || isFetching) && (
+        <LoadingMessage>Загрузка...</LoadingMessage>
+      )}
 
       {!isLoading && newsItem !== undefined && (
         <>
